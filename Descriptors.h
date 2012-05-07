@@ -42,19 +42,24 @@
 		#include <LUFA/Drivers/USB/USB.h>
 
 	/* Macros: */
-		#if !defined(LIBUSB_DRIVER_COMPAT)
-			/** Endpoint number of the AVRISP data OUT endpoint. */
-			#define AVRISP_DATA_OUT_EPNUM      2
 
-			/** Endpoint number of the AVRISP data IN endpoint. */
-			#define AVRISP_DATA_IN_EPNUM       2
-		#else
-			/** Endpoint number of the AVRISP data OUT endpoint. */
-			#define AVRISP_DATA_OUT_EPNUM      2
+		/**
+		 * Don't use the makefile option '#LUFA_OPTS += -D LIBUSB_DRIVER_COMPAT',
+		 * just define all of it here.
+		 *
+		 */
 
-			/** Endpoint number of the AVRISP data IN endpoint. */
-			#define AVRISP_DATA_IN_EPNUM       3
-		#endif
+		#define AVRISP_DATA_OUT_EPNUM__COMMON	2
+		#define AVRISP_DATA_IN_EPNUM__DEFAULT	2
+
+		/**
+		 * This is needed for libusb on windows only.
+		 * avrdude 5.11 on linux doesn't seem to care which endpoint is used.
+		 * Don't forget to remove the 'Jungo' driver and install libusb and
+		 * related things.
+		 *
+		 */
+		#define AVRISP_DATA_IN_EPNUM__LIBUSB	3
 
 		/** Size in bytes of the AVRISP data endpoint. */
 		#define AVRISP_DATA_EPSIZE             64
@@ -79,6 +84,17 @@
 		                                    const uint8_t wIndex,
 		                                    const void** const DescriptorAddress)
 		                                    ATTR_WARN_UNUSED_RESULT ATTR_NON_NULL_PTR_ARG(3);
+						    
+		
+		/**
+		 * This will be used to read MCUSR early on and evaluate it.
+		 *
+		 * An external reset (pressing the reset button) will change the device's behaviour. 				    
+		 * Information is persistently stored in 'use_libusb', which survives a reset.
+		 *
+		 */
+		extern bool use_libusb __attribute__ ((section(".noinit")));
+		void eval_mcusr(void) __attribute__((section(".init3"))) __attribute__((naked));					  
 
 #endif
 

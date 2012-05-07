@@ -93,13 +93,13 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 	bool ConfigSuccess = true;
 
 	/* Setup AVRISP Data Endpoint(s) */
-	ConfigSuccess &= Endpoint_ConfigureEndpoint(AVRISP_DATA_OUT_EPNUM, EP_TYPE_BULK, ENDPOINT_DIR_OUT,
+	ConfigSuccess &= Endpoint_ConfigureEndpoint(AVRISP_DATA_OUT_EPNUM__COMMON, EP_TYPE_BULK, ENDPOINT_DIR_OUT,
 	                                            AVRISP_DATA_EPSIZE, ENDPOINT_BANK_SINGLE);
 
-	#if defined(LIBUSB_DRIVER_COMPAT)
-	ConfigSuccess &= Endpoint_ConfigureEndpoint(AVRISP_DATA_IN_EPNUM, EP_TYPE_BULK, ENDPOINT_DIR_IN,
+	if( use_libusb == true ) {
+	ConfigSuccess &= Endpoint_ConfigureEndpoint(AVRISP_DATA_IN_EPNUM__LIBUSB, EP_TYPE_BULK, ENDPOINT_DIR_IN,
 	                                            AVRISP_DATA_EPSIZE, ENDPOINT_BANK_SINGLE);
-	#endif
+	} 
 
 	/* Indicate endpoint configuration success or failure */
 	LEDs_SetAllLEDs(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
@@ -114,7 +114,7 @@ void AVRISP_Task(void)
 
 	V2Params_UpdateParamValues();
 
-	Endpoint_SelectEndpoint(AVRISP_DATA_OUT_EPNUM);
+	Endpoint_SelectEndpoint(AVRISP_DATA_OUT_EPNUM__COMMON);
 
 	/* Check to see if a V2 Protocol command has been received */
 	if (Endpoint_IsOUTReceived())
@@ -127,4 +127,3 @@ void AVRISP_Task(void)
 		LEDs_SetAllLEDs(LEDMASK_USB_READY);
 	}
 }
-

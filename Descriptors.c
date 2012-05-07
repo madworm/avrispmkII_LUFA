@@ -37,6 +37,8 @@
 
 #include "Descriptors.h"
 
+bool use_libusb;
+
 /** Device descriptor structure. This descriptor, located in FLASH memory, describes the overall
  *  device characteristics, including the supported USB version, control endpoint size and the
  *  number of device configurations. The descriptor is read out by the USB host when the enumeration
@@ -69,7 +71,10 @@ const USB_Descriptor_Device_t PROGMEM DeviceDescriptor =
  *  and endpoints. The descriptor is read out by the USB host during the enumeration process when selecting
  *  a configuration so that the host may correctly communicate with the USB device.
  */
-const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
+
+// create a descriptor with 'libusb + windows' suitable settings.
+
+const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor_libusb =
 {
 	.Config =
 		{
@@ -106,7 +111,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 		{
 			.Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
 
-			.EndpointAddress        = (ENDPOINT_DIR_IN | AVRISP_DATA_IN_EPNUM),
+			.EndpointAddress        = (ENDPOINT_DIR_IN | AVRISP_DATA_IN_EPNUM__LIBUSB),
 			.Attributes             = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
 			.EndpointSize           = AVRISP_DATA_EPSIZE,
 			.PollingIntervalMS      = 0x0A
@@ -116,7 +121,61 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 		{
 			.Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
 
-			.EndpointAddress        = (ENDPOINT_DIR_OUT | AVRISP_DATA_OUT_EPNUM),
+			.EndpointAddress        = (ENDPOINT_DIR_OUT | AVRISP_DATA_OUT_EPNUM__COMMON),
+			.Attributes             = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+			.EndpointSize           = AVRISP_DATA_EPSIZE,
+			.PollingIntervalMS      = 0x0A
+		},
+};
+
+const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor_default =
+{
+	.Config =
+		{
+			.Header                 = {.Size = sizeof(USB_Descriptor_Configuration_Header_t), .Type = DTYPE_Configuration},
+
+			.TotalConfigurationSize = sizeof(USB_Descriptor_Configuration_t),
+			.TotalInterfaces        = 1,
+
+			.ConfigurationNumber    = 1,
+			.ConfigurationStrIndex  = NO_DESCRIPTOR,
+
+			.ConfigAttributes       = (USB_CONFIG_ATTR_RESERVED | USB_CONFIG_ATTR_SELFPOWERED),
+
+			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(100)
+		},
+
+	.AVRISP_Interface =
+		{
+			.Header                 = {.Size = sizeof(USB_Descriptor_Interface_t), .Type = DTYPE_Interface},
+
+			.InterfaceNumber        = 0,
+			.AlternateSetting       = 0,
+
+			.TotalEndpoints         = 2,
+
+			.Class                  = USB_CSCP_VendorSpecificClass,
+			.SubClass               = USB_CSCP_NoDeviceSubclass,
+			.Protocol               = USB_CSCP_NoDeviceProtocol,
+
+			.InterfaceStrIndex      = NO_DESCRIPTOR
+		},
+
+	.AVRISP_DataInEndpoint =
+		{
+			.Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
+
+			.EndpointAddress        = (ENDPOINT_DIR_IN | AVRISP_DATA_IN_EPNUM__DEFAULT),
+			.Attributes             = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+			.EndpointSize           = AVRISP_DATA_EPSIZE,
+			.PollingIntervalMS      = 0x0A
+		},
+
+	.AVRISP_DataOutEndpoint =
+		{
+			.Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
+
+			.EndpointAddress        = (ENDPOINT_DIR_OUT | AVRISP_DATA_OUT_EPNUM__COMMON),
 			.Attributes             = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
 			.EndpointSize           = AVRISP_DATA_EPSIZE,
 			.PollingIntervalMS      = 0x0A
@@ -189,7 +248,11 @@ uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
 			Size    = sizeof(USB_Descriptor_Device_t);
 			break;
 		case DTYPE_Configuration:
-			Address = &ConfigurationDescriptor;
+			if( use_libusb ) {
+				Address = &ConfigurationDescriptor_libusb;
+			} else {
+				Address = &ConfigurationDescriptor_default;
+			}
 			Size    = sizeof(USB_Descriptor_Configuration_t);
 			break;
 		case DTYPE_String:
@@ -220,3 +283,26 @@ uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
 	return Size;
 }
 
+/**
+ * The code of this 'function' is placed into the .init3 section.
+ * See 'Descriptors.h' for how it is done.
+ *
+ * It runs early in the start-up process, reads MCUSR and sets the
+ * reset-persistent variable 'use_libusb' accordingly.
+ *
+ */
+
+void eval_mcusr(void)
+{
+    uint8_t _mcusr = MCUSR;
+
+    if ( _mcusr & _BV(PORF) ) {
+    	use_libusb = false; // initialize the variable after a power-on reset
+	MCUSR = 0;
+    }
+	
+    if ( _mcusr & _BV(EXTRF) ) {
+	use_libusb = !use_libusb; // toggle between libusb / default settings by pressing the reset button
+	MCUSR = 0;
+    }
+}

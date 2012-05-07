@@ -144,7 +144,7 @@ void V2Protocol_ProcessCommand(void)
 	wdt_disable();
 
 	Endpoint_WaitUntilReady();
-	Endpoint_SelectEndpoint(AVRISP_DATA_OUT_EPNUM);
+	Endpoint_SelectEndpoint(AVRISP_DATA_OUT_EPNUM__COMMON);
 	Endpoint_SetEndpointDirection(ENDPOINT_DIR_OUT);
 }
 
@@ -163,7 +163,13 @@ static void V2Protocol_UnknownCommand(const uint8_t V2Command)
 	}
 
 	Endpoint_ClearOUT();
-	Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM);
+	
+	if ( use_libusb == true ) {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__LIBUSB);
+	} else {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__DEFAULT);
+	}
+
 	Endpoint_SetEndpointDirection(ENDPOINT_DIR_IN);
 
 	Endpoint_Write_8(V2Command);
@@ -175,7 +181,14 @@ static void V2Protocol_UnknownCommand(const uint8_t V2Command)
 static void V2Protocol_SignOn(void)
 {
 	Endpoint_ClearOUT();
-	Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM);
+
+	if ( use_libusb == true ) {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__LIBUSB);
+
+	} else {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__DEFAULT);
+	}
+
 	Endpoint_SetEndpointDirection(ENDPOINT_DIR_IN);
 
 	Endpoint_Write_8(CMD_SIGN_ON);
@@ -191,7 +204,14 @@ static void V2Protocol_SignOn(void)
 static void V2Protocol_ResetProtection(void)
 {
 	Endpoint_ClearOUT();
-	Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM);
+
+	if ( use_libusb == true ) {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__LIBUSB);
+
+	} else {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__DEFAULT);
+	}
+
 	Endpoint_SetEndpointDirection(ENDPOINT_DIR_IN);
 
 	Endpoint_Write_8(CMD_RESET_PROTECTION);
@@ -214,7 +234,13 @@ static void V2Protocol_GetSetParam(const uint8_t V2Command)
 	  ParamValue = Endpoint_Read_8();
 
 	Endpoint_ClearOUT();
-	Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM);
+
+	if ( use_libusb == true ) {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__LIBUSB);
+	} else {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__DEFAULT);
+	}
+
 	Endpoint_SetEndpointDirection(ENDPOINT_DIR_IN);
 
 	Endpoint_Write_8(V2Command);
@@ -248,7 +274,13 @@ static void V2Protocol_LoadAddress(void)
 	Endpoint_Read_Stream_BE(&CurrentAddress, sizeof(CurrentAddress), NULL);
 
 	Endpoint_ClearOUT();
-	Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM);
+
+	if ( use_libusb == true ) {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__LIBUSB);
+	} else {
+		Endpoint_SelectEndpoint(AVRISP_DATA_IN_EPNUM__DEFAULT);
+	}
+
 	Endpoint_SetEndpointDirection(ENDPOINT_DIR_IN);
 
 	if (CurrentAddress & (1UL << 31))
