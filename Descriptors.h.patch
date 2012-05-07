@@ -1,0 +1,37 @@
+--- ./Descriptors.h.orig	2012-05-07 06:56:18.868049761 +0200
++++ ./Descriptors.h	2012-05-07 07:37:14.176264036 +0200
+@@ -42,19 +42,11 @@
+ 		#include <LUFA/Drivers/USB/USB.h>
+ 
+ 	/* Macros: */
+-		#if !defined(LIBUSB_DRIVER_COMPAT)
+-			/** Endpoint number of the AVRISP data OUT endpoint. */
+-			#define AVRISP_DATA_OUT_EPNUM      2
+-
+-			/** Endpoint number of the AVRISP data IN endpoint. */
+-			#define AVRISP_DATA_IN_EPNUM       2
+-		#else
+-			/** Endpoint number of the AVRISP data OUT endpoint. */
+-			#define AVRISP_DATA_OUT_EPNUM      2
+-
+-			/** Endpoint number of the AVRISP data IN endpoint. */
+-			#define AVRISP_DATA_IN_EPNUM       3
+-		#endif
++
++		#define AVRISP_DATA_OUT_EPNUM__COMMON	2
++		#define AVRISP_DATA_IN_EPNUM__DEFAULT	2
++
++		#define AVRISP_DATA_IN_EPNUM__LIBUSB	3
+ 
+ 		/** Size in bytes of the AVRISP data endpoint. */
+ 		#define AVRISP_DATA_EPSIZE             64
+@@ -79,6 +71,8 @@
+ 		                                    const uint8_t wIndex,
+ 		                                    const void** const DescriptorAddress)
+ 		                                    ATTR_WARN_UNUSED_RESULT ATTR_NON_NULL_PTR_ARG(3);
+-
++						    
++		extern bool use_libusb __attribute__ ((section(".noinit")));
++		void eval_mcusr(void) __attribute__((section(".init3"))) __attribute__((naked));						    
+ #endif
+ 
