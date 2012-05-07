@@ -48,3 +48,9 @@ if power is removed.
 
 Have fun!
 
+
+How to build (linux) / use on windows:
+
+http://www.youtube.com/watch?v=tORRNU5QLpc
+http://www.youtube.com/watch?v=1IHecxN8TBQ
+
