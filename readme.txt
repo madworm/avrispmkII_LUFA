@@ -1,3 +1,10 @@
+Please get this version:
+
+http://code.google.com/p/lufa-lib/source/detail?r=2226
+
+
+------
+
 
 This patch is against 'LUFA-120219.zip'
 
